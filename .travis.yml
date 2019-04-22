@@ -1,0 +1,28 @@
+dist: trusty
+sudo: required
+notifications:
+  email: false
+env:
+  - RELEASE_TAG="release-$TRAVIS_BUILD_NUMBER"
+stages:
+  - database migration
+if: tag IS blank
+
+jobs:
+  include:
+  - stage: database migration
+    language: java
+    jdk: oraclejdk8
+    addons:
+      mariadb: '10.2'
+    install: skip
+    before_script:
+    - echo 'starting migration'
+    - wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo apt-key add -
+    - echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
+    - sudo apt-get update
+    - sudo apt-get install cf-cli
+    - cf install-plugin -r "CF-Community" mysql-plugin -f
+    - cf login -a https://api.run.pivotal.io -u saranya.n2@dell.com -s saranya.n2@dell.com -o DellEMC_PAL -p Apr_2019
+    - curl https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/5.1.1/flyway-commandline-5.1.1-linux-x64.tar.gz | tar xvz
+    - flyway-*/flyway -url="jdbc:mysql://us-cdbr-iron-east-02.cleardb.net/ad_e5d2f4669b3f69c?user=bfdc3bc62f4d35&password=ff0c52e5" -locations=filesystem:db -user=bfdc3bc62f4d35 -password=ff0c52e5 clean migrate
